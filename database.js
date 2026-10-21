@@ -23,6 +23,7 @@ const db = new sqlite3.Database('./allWorks.db', {enableForeignKeyConstraints: t
 CREATE TABLE IF NOT EXISTS works (
     workId INTEGER PRIMARY KEY,
     workName TEXT NOT NULL,
+    fileName TEXT NOT NULL,
     uploadDate TEXT NOT NULL,
     FOREIGN KEY (authorId) REFERENCES users (authorId)
         ON DELETE CASCADE

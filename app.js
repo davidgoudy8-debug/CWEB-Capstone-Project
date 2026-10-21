@@ -14,17 +14,33 @@ const hbs = exphbs.create({
     partialsDir: __dirname + '/views/partials',
 
 })
-
+app.use(express.urlencoded({ extended: true }));
 app.engine('hbs', hbs.engine);
 app.set('view engine', 'hbs');
-app.use(helmet());
-app.use(helmet.contentSecurityPolicy({
-    directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", 'trusted-scripts.com'],
-    },
-}));
-app.use(express.json());
+//
+const checkUser = async (req, res, next) => {
+    // Extract token from cookies or authorization header
+    const token = req.cookies.jwt || req.headers.authorization?.split(' ')[1];
+
+    if (token) {
+        try {
+            // Verify token
+            const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+
+            // Fetch user from database using decoded ID
+            const user = await db.findById(decodedToken.id);
+
+            // Inject user into res.locals so it's accessible globally in this request cycle
+            res.locals.user = user;
+            req.user = user;
+        } catch (err) {
+            res.locals.user = null;
+        }
+    } else {
+        res.locals.user = null;
+    }
+    next();
+};
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -48,6 +64,8 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
+
+
 const upload = multer({ storage: storage,
     fileFilter: fileFilter,
     limits: {
@@ -55,8 +73,40 @@ const upload = multer({ storage: storage,
     }
 });
 
+
+app.get('/', (req, res) => {
+
+    res.render('homePage', {title: "hi there"});
+
+});
+
+app.get('/signUp', (req, res) => {
+    res.render('signUp');
+})
+app.post('/signIn', (req, res) => {
+    const { email, password } = req.body;
+    let locJSON;
+    const sql = `SELECT * FROM users WHERE email = ?`;
+    db.all(sql, [email], (err, rows) => {
+        if (err) {
+            return res.status(500).send({error: err.message});
+        }
+        if(password === rows.password) {
+        const token = jwt.sign(
+            { id: rows.id, email: rows.email }, // Payload
+            process.env.JWT_SECRET,             // Your secret key
+            { expiresIn: '1h' }                 // Expiration time
+        )
+            console.log(token);
+        }
+    })
+
+
+})
+
 app.post('/api/users', (req, res) => {
-    const { name, email,phone ,password } = req.body;
+
+    const { name, email, phone ,password } = req.body;
     if (!name || !email || !phone || !password) {
         return res.status(400).send({ error: 'Please enter valid credentials' });
     }
@@ -76,31 +126,11 @@ app.get('/api/users', (req, res) => {
         if (err) {
             return res.status(500).send({error: err.message});
         }
-        res.status(200).send({rows: rows});
+        res.render('api/users',{rows: rows});
     })
 })
 
-app.get('/', (req, res) => {
-
-    res.render('homePage', {title: "hi there"});
-
-});
-
-app.get('/signUp', (req, res) => {
-    res.render('signUp');
-})
-
-app.post('/signedIn', (req, res) => {
-    res.send(`your name: ${req.body.myName} </br>`
-        +`your Email: ${req.body.myEmail} </br>`
-        +`your Phone number: ${req.body.myPhone} </br>`
-        +`your position: ${req.body.myPos} </br>`
-        +`File uploaded successfully: ${req.file.originalname}`);
-
-})
-
-app.post('/upload',(req, res) => {
-
+app.post('/api/users', (req, res) => {
     upload.single('myFile')(req, res, (err) => {
         if (err instanceof multer.MulterError) {
             // Handles Multer-specific errors (e.g., File too large)
@@ -120,7 +150,29 @@ app.post('/upload',(req, res) => {
 
         res.send(`your name: ${req.body.pubName} </br>`
             +`File uploaded successfully: ${req.file.originalname}`);
+
+    const { pubName } = req.body;
+    const originalName = req.file.originalname;
+    const authorID = 1;
+    const date = new Date();
+    if (!pubName) {
+        return res.status(400).send({ error: 'Please enter valid credentials' });
+    }
+
+    const sql = `INSERT INTO works (workName, fileName,uploadDate, authorID ) values(?, ?, ?, ?)`
+    db.run(sql, [pubName, originalName, authorID, date], function (err) {
+        if(err) {
+            return res.status(500).send({error: err.message});
+        }
+        res.status(200).send({workId: this.lastID, workName: pubName, fileName: originalName, date: date, authorID: authorID});
     });
+    });
+})
+
+
+app.post('/upload',(req, res) => {
+
+
 })
 
 

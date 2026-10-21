@@ -1,17 +1,17 @@
 <h2>Upload a File</h2>
-<form action="/api/users" method="post" enctype="multipart/form-data">
+<form action="/api/users" method="POST" >
 
     <label for="name">Name</label>
-    <input type="text" id="name" name="myName">
+    <input type="text" id="name" name="name" required>
 
     <label for="email">EMail</label>
-    <input type="email" id="email" name="myEmail">
+    <input type="email" id="email" name="email" required>
 
     <label for="phone">Phone Number</label>
-    <input type="number" id="phone" name="myphone">
+    <input type="number" id="phone" name="phone" required>
 
     <label for="password">Address</label>
-    <input type="text" id="password" name="myPassword">
+    <input type="text" id="password" name="password" required>
 
     <button type="submit">Upload</button>
 </form>
