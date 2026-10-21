@@ -1,7 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 
 // Connect to a local SQLite database file
-const db = new sqlite3.Database('./allWorks.db', (err) => {
+const db = new sqlite3.Database('./allWorks.db', {enableForeignKeyConstraints: true }, (err) => {
     if (err) {
         console.error('Error opening database:', err.message);
     } else {
@@ -10,11 +10,11 @@ const db = new sqlite3.Database('./allWorks.db', (err) => {
         // Create an items table
         db.run(`
             CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY,
+                authorId INTEGER PRIMARY KEY,
                 username TEXT NOT NULL,
                 email TEXT NOT NULL,
                 phone INTEGER NOT NULL,
-                password TEXT NOT NULL,
+                password TEXT NOT NULL
             )`, (err) => {
             if (err) console.error('Error creating table:', err.message);
         });
