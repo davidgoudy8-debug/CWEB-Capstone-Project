@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer')
 const PORT = 8080;
 const { URLSearchParams } = require('url');
+const Database = require('better-sqlite3');
 const hbs = exphbs.create({
     extname: 'hbs',
     defaultLayout: 'main',
@@ -42,6 +43,26 @@ const fileFilter = (req, file, cb) => {
         cb(new Error('Invalid file type. Only JPEG, PNG, and PDF are allowed!'), false);
     }
 };
+
+const db = new Database('webDB');
+
+db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        phone INTEGER NOT NULL
+)`)
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS works (
+    workId INTEGER PRIMARY KEY,
+    workName TEXT NOT NULL,
+    uploadDate TEXT NOT NULL,
+    FOREIGN KEY (authorId) REFERENCES users (authorId)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+)`)
 
 app.get('/', (req, res) => {
 
