@@ -15,12 +15,16 @@ const hbs = exphbs.create({
 
 })
 
-const upload = multer({ storage: storage,
-    fileFilter: fileFilter,
-    limits: {
-        fileSize: 5 * 1024 * 1024
-    }
-});
+app.engine('hbs', hbs.engine);
+app.set('view engine', 'hbs');
+app.use(helmet());
+app.use(helmet.contentSecurityPolicy({
+    directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", 'trusted-scripts.com'],
+    },
+}));
+app.use(express.json());
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -43,6 +47,13 @@ const fileFilter = (req, file, cb) => {
         cb(new Error('Invalid file type. Only JPEG, PNG, and PDF are allowed!'), false);
     }
 };
+
+const upload = multer({ storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024
+    }
+});
 
 app.post('/api/users', (req, res) => {
     const { name, email,phone ,password } = req.body;
