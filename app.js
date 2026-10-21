@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer')
 const PORT = 8080;
 const { URLSearchParams } = require('url');
-const Database = require('better-sqlite3');
+const db = require('./database');
 const hbs = exphbs.create({
     extname: 'hbs',
     defaultLayout: 'main',
@@ -44,25 +44,30 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-const db = new Database('webDB');
+app.post('/api/users', (req, res) => {
+    const { name, email,phone ,password } = req.body;
+    if (!name || !email || !phone || !password) {
+        return res.status(400).send({ error: 'Please enter valid credentials' });
+    }
 
-db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        email TEXT NOT NULL,
-        phone INTEGER NOT NULL
-)`)
+    const sql = `INSERT INTO users (username, email, phone ,password) values(?, ?, ?, ?)`
+    db.run(sql, [name, email, phone, password], function (err) {
+        if(err) {
+            return res.status(500).send({error: err.message});
+        }
+        res.status(200).send({id: this.lastID, username: name, email: email, phone: phone, password: password});
+    });
+})
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS works (
-    workId INTEGER PRIMARY KEY,
-    workName TEXT NOT NULL,
-    uploadDate TEXT NOT NULL,
-    FOREIGN KEY (authorId) REFERENCES users (authorId)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
-)`)
+app.get('/api/users', (req, res) => {
+    const sql = `SELECT * FROM users`;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            return res.status(500).send({error: err.message});
+        }
+        res.status(200).send({rows: rows});
+    })
+})
 
 app.get('/', (req, res) => {
 
