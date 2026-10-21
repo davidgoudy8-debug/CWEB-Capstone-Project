@@ -86,7 +86,9 @@ app.get('/', (req, res) => {
 
 });
 
-app.get('/signUp', (req, res) => {})
+app.get('/signUp', (req, res) => {
+    res.render('signUp');
+})
 
 app.post('/signedIn', (req, res) => {
     res.send(`your name: ${req.body.myName} </br>`
